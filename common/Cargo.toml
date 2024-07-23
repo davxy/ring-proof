@@ -18,6 +18,7 @@ merlin.workspace = true
 rayon = { workspace = true, optional = true }
 getrandom_or_panic = { version = "0.0.3", default-features = false }
 rand_chacha = { version = "0.3.1", default-features = false }
+blake2b_simd = { version = "1.0.2", optional = true }
 
 [dev-dependencies]
 ark-ed-on-bls12-381-bandersnatch = { version = "0.4", default-features = false }
@@ -44,4 +45,5 @@ parallel = [
   "ark-poly/parallel"
 ]
 print-trace = ["ark-std/print-trace"]
+test-vectors = ["blake2b_simd"]
 asm = ["fflonk/asm"]

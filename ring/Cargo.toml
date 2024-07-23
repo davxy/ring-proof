@@ -53,3 +53,4 @@ print-trace = [
 asm = [
   "fflonk/asm"
 ]
+test-vectors = ["common/test-vectors"]
