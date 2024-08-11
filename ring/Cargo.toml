@@ -52,9 +52,10 @@ print-trace = [
   "ark-std/print-trace",
   "common/print-trace"
 ]
+merlin = [
+  "dep:merlin",
+  "common/merlin"
+]
 asm = [
   "fflonk/asm"
-]
-merlin = [
-  "common/merlin"
 ]
