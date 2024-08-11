@@ -24,6 +24,7 @@ pub type RingProof<F, CS> = Proof<F, CS, RingCommitments<F, <CS as PCS<F>>::C>, 
 pub use fflonk::pcs;
 
 /// Transcript for `RingProver` and `RingVerifier` construction.
+#[cfg(feature = "merlin")]
 pub use merlin::Transcript;
 
 // Calling the method for a prime-order curve results in an infinite loop.

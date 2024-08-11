@@ -1,8 +1,7 @@
 use ark_ff::PrimeField;
 use ark_poly::GeneralEvaluationDomain;
 use ark_serialize::CanonicalSerialize;
-use ark_std::{vec, vec::Vec};
-use ark_std::rand::SeedableRng;
+use ark_std::vec::Vec;
 use fflonk::pcs::{PCS, PcsParams};
 use rand_chacha::ChaCha20Rng;
 
@@ -66,6 +65,7 @@ pub trait Transcript<F: PrimeField, CS: PCS<F>>: Clone {
     fn to_rng(self) -> ChaCha20Rng;
 }
 
+#[cfg(feature = "merlin")]
 impl<F: PrimeField, CS: PCS<F>> Transcript<F, CS> for merlin::Transcript {
     fn _128_bit_point(&mut self, label: &'static [u8]) -> F {
         let mut buf = [0u8; 16];
@@ -74,12 +74,13 @@ impl<F: PrimeField, CS: PCS<F>> Transcript<F, CS> for merlin::Transcript {
     }
 
     fn _add_serializable(&mut self, label: &'static [u8], message: &impl CanonicalSerialize) {
-        let mut buf = vec![0; message.uncompressed_size()];
+        let mut buf = ark_std::vec![0; message.uncompressed_size()];
         message.serialize_uncompressed(&mut buf).unwrap();
         self.append_message(label, &buf);
     }
 
     fn to_rng(mut self) -> ChaCha20Rng {
+        use ark_std::rand::SeedableRng;
         let mut buf = [0u8; 32];
         self.challenge_bytes(b"transcript_rng", &mut buf);
         ChaCha20Rng::from_seed(buf)
