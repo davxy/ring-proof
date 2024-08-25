@@ -142,7 +142,7 @@ pub struct FixedColumns<F: PrimeField, G: AffineRepr<BaseField=F>> {
 #[derive(Clone, CanonicalSerialize, CanonicalDeserialize, PartialEq, Eq, Debug)]
 pub struct FixedColumnsCommitted<F: PrimeField, C: Commitment<F>> {
     pub points: [C; 2],
-    ring_selector: C,
+    pub ring_selector: C,
     phantom: PhantomData<F>,
 }
 
@@ -153,6 +153,14 @@ impl<F: PrimeField, C: Commitment<F>> FixedColumnsCommitted<F, C> {
             self.points[1].clone(),
             self.ring_selector.clone(),
         ]
+    }
+
+    pub fn new(points: [C; 2], ring_selector: C) -> Self {
+        Self {
+            points,
+            ring_selector,
+            phantom: Default::default(),
+        }
     }
 }
 
