@@ -89,6 +89,10 @@ impl<F: PrimeField, Curve: SWCurveConfig<BaseField=F>> PiopParams<F, Curve> {
             vec![F::zero(); self.scalar_bitlen]
         ].concat()
     }
+
+    pub fn padding_point(&self) -> Affine<Curve> {
+        self.padding_point
+    }
 }
 
 #[cfg(test)]
