@@ -30,10 +30,20 @@ where
 {
     type Values = TECondAddValues<C>;
 
-    // Populates the acc column starting from the supplied seed (as 0 doesn't work with the addition formula).
-    // As the TE addition formula used is not complete, the seed must be selected in a way that would prevent
-    // exceptional cases (doublings or adding the opposite point).
-    // The last point of the input column is ignored, as adding it would made the acc column overflow due the initial point.
+    /// Populates the `acc` column starting from the provided `seed`.
+    ///
+    /// It is **recommended** that the `seed` to be chosen **inside** the curve prime
+    /// order subgroup.
+    ///
+    /// Furthermore, becuase the TE addition formula used is incomplete, the seed should
+    /// be selected with care to avoid exceptional cases such as doublings or adding the
+    /// opposite point.
+    ///
+    /// To mitigate exceptional cases arising from malicious use, it is recommended that
+    /// the `points` be first verified using a PoP (Proof of Ownership).
+    ///
+    /// The last point of the input column is ignored, as adding it would made the acc column
+    /// overflow due the initial point.
     fn init(
         bitmask: BitColumn<F>,
         points: AffineColumn<F, Affine<C>>,
@@ -82,7 +92,7 @@ where
     }
 
     fn get_result(&self) -> Affine<C> {
-        self.result.clone()
+        self.result
     }
 }
 
@@ -281,7 +291,7 @@ mod tests {
         domain.divide_by_vanishing_poly(&c1);
         domain.divide_by_vanishing_poly(&c2);
 
-        return (domain, gadget, cs);
+        (domain, gadget, cs)
     }
 
     #[test]

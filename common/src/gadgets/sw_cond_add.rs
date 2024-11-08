@@ -1,6 +1,6 @@
 use ark_ec::short_weierstrass::{Affine, SWCurveConfig};
 use ark_ec::{AffineRepr, CurveGroup};
-use ark_ff::{FftField, Field};
+use ark_ff::{FftField, Field, One, Zero};
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::{Evaluations, GeneralEvaluationDomain};
 use ark_std::{vec, vec::Vec};
@@ -30,10 +30,25 @@ where
 {
     type Values = SWCondAddValues<C>;
 
-    // Populates the acc column starting from the supplied seed (as 0 doesn't have an affine SW representation).
-    // As the SW addition formula used is not complete, the seed must be selected in a way that would prevent
-    // exceptional cases (doublings or adding the opposite point).
-    // The last point of the input column is ignored, as adding it would made the acc column overflow due the initial point.
+    /// Populates the `acc` column starting from the provided `seed`.
+    ///
+    /// As `0` lacks an affine SW representation, it is **recommended** that the `seed`
+    /// be chosen outside the curve prime order subgroup to remove the risk of the
+    /// conditional addition result landing on the point at infinity (this also applies
+    /// to intermediate results).
+    ///
+    /// Furthermore, becuase the SW addition formula used is incomplete, the seed should
+    /// be selected with care to avoid exceptional cases such as doublings or adding the
+    /// opposite point.
+    ///
+    /// To mitigate exceptional cases arising from malicious use, it is recommended that
+    /// the `points` be first verified using a PoP (Proof of Ownership).
+    ///
+    /// The last point of the input column is ignored, as adding it would made the acc column
+    /// overflow due the initial point.
+    ///
+    /// A valid `seed` outside the prime order subgroup can be generated via the
+    /// [`find_complement_point`] utility function.
     fn init(
         bitmask: BitColumn<F>,
         points: AffineColumn<F, Affine<C>>,
@@ -42,6 +57,7 @@ where
     ) -> Self {
         assert_eq!(bitmask.bits.len(), domain.capacity - 1);
         assert_eq!(points.points.len(), domain.capacity - 1);
+
         let not_last = domain.not_last_row.clone();
         let acc = bitmask
             .bits
@@ -82,7 +98,7 @@ where
     }
 
     fn get_result(&self) -> Affine<C> {
-        self.result.clone()
+        self.result
     }
 }
 
@@ -233,9 +249,26 @@ where
     }
 }
 
+/// Finds first point outside the prime order subgroup of the curve.
+///
+/// Panics if the curve group has prime order (cofactor = 1).
+pub fn find_complement_point<C: SWCurveConfig>() -> Affine<C> {
+    assert!(!C::cofactor_is_one());
+    let mut x = C::BaseField::zero();
+    loop {
+        if let Some(p) = Affine::<C>::get_point_from_x_unchecked(x, false)
+            .filter(|p| !p.is_in_correct_subgroup_assuming_on_curve())
+        {
+            return p;
+        }
+        x += C::BaseField::one();
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use ark_ed_on_bls12_381_bandersnatch::{Fq, SWAffine};
+    use ark_ed_on_bls12_381_bandersnatch::{BandersnatchConfig, Fq, SWAffine};
+    use ark_ff::MontFp;
     use ark_poly::Polynomial;
     use ark_std::test_rng;
 
@@ -274,7 +307,7 @@ mod tests {
         domain.divide_by_vanishing_poly(&c1);
         domain.divide_by_vanishing_poly(&c2);
 
-        return (domain, gadget, cs);
+        (domain, gadget, cs)
     }
 
     #[test]
@@ -299,5 +332,21 @@ mod tests {
             let constrain_poly = constrains[i].interpolate_by_ref();
             assert_eq!(constrain_poly.evaluate(&random_point), result);
         }
+    }
+
+    #[test]
+    fn test_complement_point() {
+        let p = find_complement_point::<BandersnatchConfig>();
+        assert!(p.is_on_curve());
+        assert!(!p.is_in_correct_subgroup_assuming_on_curve());
+        assert_eq!(
+            p,
+            SWAffine::new_unchecked(
+                MontFp!("0"),
+                MontFp!(
+                    "11982629110561008531870698410380659621661946968466267969586599013782997959645"
+                )
+            )
+        )
     }
 }
