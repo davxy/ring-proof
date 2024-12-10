@@ -35,8 +35,8 @@ pub fn find_complement_point<Curve: SWCurveConfig>() -> Affine<Curve> {
     }
 }
 
-// Try and increment hash to curve.
-pub(crate) fn hash_to_curve<F: PrimeField, Curve: SWCurveConfig<BaseField = F>>(message: &[u8]) -> Affine<Curve> {
+/// Simple try and increment hash to curve.
+pub fn hash_to_curve<F: PrimeField, Curve: SWCurveConfig<BaseField = F>>(message: &[u8]) -> Affine<Curve> {
     use blake2::Digest;
     let mut seed = message.to_vec();
     let cnt_offset = seed.len();
